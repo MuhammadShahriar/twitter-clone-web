@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import { createTweet, type Tweet } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { avatarColor, initials } from "@/lib/format";
+import { Avatar } from "@/components/Avatar";
 import { IMAGE_ACCEPT_ATTR, useImageAttachments } from "@/lib/useImageAttachments";
 import { AttachmentGrid } from "@/components/MediaGrid";
 import {
@@ -86,9 +86,7 @@ export function Composer({ onPosted }: { onPosted: (tweet: Tweet) => void }) {
   return (
     <>
       <div className="compose">
-        <span className="avatar" style={{ background: avatarColor(user.handle) }}>
-          {initials(user.displayName)}
-        </span>
+        <Avatar seed={user.handle} name={user.displayName} src={user.avatarUrl} />
         <div className="compose-main">
           <textarea
             ref={taRef}

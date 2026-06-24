@@ -190,3 +190,20 @@ export const IconBack = () => (
     <path d="m12 19-7-7 7-7" />
   </Svg>
 );
+export const IconCalendar = (p: IcoProps) => (
+  <Svg {...p}>
+    <rect x="3.5" y="5" width="17" height="16" rx="2" />
+    <path d="M3.5 9.5h17M8 3.5v3M16 3.5v3" />
+  </Svg>
+);
+export const IconClose = (p: IcoProps) => (
+  <Svg {...p}>
+    <path d="M6 6l12 12M18 6 6 18" />
+  </Svg>
+);
+export const IconCamera = (p: IcoProps) => (
+  <Svg {...p}>
+    <path d="M4 8a2 2 0 0 1 2-2h1.5l1-1.6A1 1 0 0 1 9.4 4h5.2a1 1 0 0 1 .9.5L16.5 6H18a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />
+    <circle cx="12" cy="13" r="3.2" />
+  </Svg>
+);

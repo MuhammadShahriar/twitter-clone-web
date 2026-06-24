@@ -15,6 +15,8 @@ export interface AuthUser {
   id: string;
   handle: string;
   displayName: string;
+  /** Current user's avatar (Module 4C); null when unset. */
+  avatarUrl: string | null;
 }
 
 interface AuthContextValue {
@@ -25,6 +27,8 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>;
   register: (input: RegisterInput) => Promise<void>;
   logout: () => Promise<void>;
+  /** Patch the signed-in user after a profile edit (4C) so chips update live. */
+  updateCurrentUser: (patch: Partial<Pick<AuthUser, "displayName" | "avatarUrl">>) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -34,7 +38,27 @@ function userFromSession(session: AuthSession): AuthUser {
     id: session.userId,
     handle: session.handle,
     displayName: session.displayName,
+    avatarUrl: null, // session payload has no avatar; getMe enriches it
   };
+}
+
+function userFromCurrent(me: api.CurrentUser): AuthUser {
+  return {
+    id: me.userId,
+    handle: me.handle,
+    displayName: me.displayName,
+    avatarUrl: me.avatarUrl,
+  };
+}
+
+// After login/refresh sets the access token, getMe carries avatarUrl; fall back
+// to the (avatar-less) session user if that enrichment call fails.
+async function enrich(session: AuthSession): Promise<AuthUser> {
+  try {
+    return userFromCurrent(await api.getMe());
+  } catch {
+    return userFromSession(session);
+  }
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -54,7 +78,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     (async () => {
       try {
         const session = await api.refresh();
-        if (active) setUser(userFromSession(session));
+        const u = await enrich(session);
+        if (active) setUser(u);
       } catch {
         if (active) setUser(null);
       } finally {
@@ -68,20 +93,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const session = await api.login(email, password);
-    setUser(userFromSession(session));
+    setUser(await enrich(session));
   }, []);
 
   const register = useCallback(async (input: RegisterInput) => {
     await api.register(input);
     // Auto-login so the new account lands authenticated (also sets the cookie).
     const session = await api.login(input.email, input.password);
-    setUser(userFromSession(session));
+    setUser(await enrich(session));
   }, []);
 
   const logout = useCallback(async () => {
     await api.logout();
     setUser(null);
   }, []);
+
+  const updateCurrentUser = useCallback(
+    (patch: Partial<Pick<AuthUser, "displayName" | "avatarUrl">>) => {
+      setUser((prev) => (prev ? { ...prev, ...patch } : prev));
+    },
+    []
+  );
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -91,8 +123,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       login,
       register,
       logout,
+      updateCurrentUser,
     }),
-    [user, isLoading, login, register, logout]
+    [user, isLoading, login, register, logout, updateCurrentUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

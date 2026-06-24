@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import type { Tweet } from "@/lib/api";
 import { absoluteTime, avatarColor, fmtCount, initials } from "@/lib/format";
 import { useEngagement } from "@/lib/useEngagement";
@@ -65,6 +66,8 @@ export function FocusedTweet({
   onEngage?: (id: string, patch: Partial<Tweet>) => void;
 }) {
   const { toggleLike, toggleRetweet } = useEngagement(tweet, onEngage);
+  // Profile URLs use the bare handle (no `@`); the DTO handle may carry one.
+  const authorHref = `/${tweet.authorHandle.replace(/^@+/, "")}`;
   // bookmark stays a local visual placeholder (not wired in 3C).
   const [bookmarked, setBookmarked] = useState(false);
 
@@ -108,11 +111,15 @@ export function FocusedTweet({
       style={deleting ? { opacity: 0.5, pointerEvents: "none" } : undefined}
     >
       <div className="focused-head">
-        <span className="avatar lg" style={{ background: avatarColor(tweet.authorHandle) }}>
-          {initials(tweet.authorDisplayName)}
-        </span>
+        <Link href={authorHref} className="avatar-link" aria-label={`${tweet.authorDisplayName} profile`}>
+          <span className="avatar lg" style={{ background: avatarColor(tweet.authorHandle) }}>
+            {initials(tweet.authorDisplayName)}
+          </span>
+        </Link>
         <div className="focused-id">
-          <div className="focused-name">{tweet.authorDisplayName}</div>
+          <Link href={authorHref} className="focused-name link-name">
+            {tweet.authorDisplayName}
+          </Link>
           <div className="focused-handle">@{tweet.authorHandle}</div>
         </div>
 

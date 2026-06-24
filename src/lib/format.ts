@@ -52,6 +52,13 @@ export function absoluteTime(iso: string): string {
   return `${time} · ${date}`;
 }
 
+/** Month + year from an ISO date, e.g. "March 2023" — the profile "Joined" line. */
+export function monthYear(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+
 /** Up to two initials from a display name, e.g. "Md Shahriar Alam" → "MS". */
 export function initials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);

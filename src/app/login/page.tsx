@@ -31,7 +31,8 @@ export default function LoginPage() {
       router.push("/");
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        setFormError("Invalid email or password.");
+        // "login" (not "email") since the identifier can be an email or a handle.
+        setFormError("Invalid login or password.");
       } else if (err instanceof ApiError && err.status === 423) {
         setFormError("Too many attempts. Please try again later.");
       } else {

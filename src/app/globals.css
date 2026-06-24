@@ -1351,3 +1351,333 @@ body {
     align-items: center;
   }
 }
+
+/* ===== Profile page (Brief 4 / Module 4B) ===== */
+.profile-head {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 0 16px;
+  height: 53px;
+}
+.profile-head .ph-title {
+  line-height: 1.15;
+}
+.profile-head .ph-name {
+  font-size: 17px;
+  font-weight: 800;
+}
+.profile-head .ph-sub {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.banner {
+  height: 200px;
+  background: linear-gradient(120deg, #15324a 0%, #294152 55%, #3a3340 100%);
+}
+
+.profile-actions-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 0 16px;
+}
+/* Pull the avatar up so it overlaps the banner (the link wraps the avatar). */
+.profile-actions-row .avatar-link {
+  margin-top: -67px;
+}
+.avatar.profile-pic {
+  width: 134px;
+  height: 134px;
+  border: 4px solid #000;
+  font-size: 52px;
+}
+.profile-action-btns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 12px;
+}
+.profile-btn {
+  height: 36px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.12s ease, opacity 0.12s ease;
+}
+.profile-btn.edit {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid #536471;
+}
+.profile-btn.edit:hover {
+  background: rgba(231, 233, 234, 0.1);
+}
+
+.profile-info {
+  padding: 4px 16px 12px;
+}
+.profile-name {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+.profile-handle {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-top: 1px;
+}
+.profile-bio {
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--text);
+  margin: 12px 0;
+  white-space: pre-wrap;
+}
+.profile-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  color: var(--text-secondary);
+  font-size: 15px;
+  margin-bottom: 12px;
+}
+.profile-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.profile-counts {
+  display: flex;
+  gap: 20px;
+  font-size: 15px;
+}
+.profile-count {
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.profile-count:hover {
+  text-decoration: underline;
+}
+.profile-count b {
+  color: var(--text);
+  font-weight: 700;
+  margin-right: 3px;
+}
+.profile-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Avatar image (Module 4B) + profile/author link helpers */
+.avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+.avatar-link {
+  flex: none;
+  display: block;
+  line-height: 0;
+}
+.link-name {
+  color: inherit;
+  text-decoration: none;
+}
+.link-name:hover {
+  text-decoration: underline;
+}
+
+/* ===== Edit-profile modal (Module 4C) ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 5vh 16px;
+  background: rgba(0, 0, 0, 0.6);
+  overflow-y: auto;
+}
+.modal {
+  width: 100%;
+  max-width: 600px;
+  background: var(--bg, #000);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+.modal-head {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(12px);
+  border-radius: 16px 16px 0 0;
+}
+.modal-close {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.modal-close:hover {
+  background: rgba(231, 233, 234, 0.1);
+}
+.modal-close:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.modal-title {
+  flex: 1;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+}
+.modal-save {
+  height: 34px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--text);
+  color: #000;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: opacity 0.12s ease;
+}
+.modal-save:hover {
+  opacity: 0.88;
+}
+.modal-save:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.modal-body {
+  padding: 12px 16px 20px;
+}
+.modal-error {
+  margin: 6px 1px 0;
+  font-size: 13px;
+  color: var(--error, #f4212e);
+}
+
+.edit-avatar {
+  position: relative;
+  width: 96px;
+  margin: 4px 0 4px;
+}
+.avatar.edit-pic {
+  width: 96px;
+  height: 96px;
+  border: 3px solid var(--bg, #000);
+  font-size: 36px;
+}
+.edit-avatar-cam {
+  position: absolute;
+  inset: 0;
+  width: 96px;
+  height: 96px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.edit-avatar-cam:hover {
+  background: rgba(0, 0, 0, 0.6);
+}
+.edit-avatar-cam:disabled {
+  cursor: default;
+}
+.edit-avatar-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+.link-btn {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  cursor: pointer;
+}
+.link-btn:hover {
+  text-decoration: underline;
+}
+.link-btn.danger {
+  color: var(--error, #f4212e);
+}
+.link-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+  text-decoration: none;
+}
+
+.edit-field {
+  display: block;
+  margin-top: 16px;
+}
+.edit-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.edit-counter {
+  font-variant-numeric: tabular-nums;
+}
+.edit-counter.over {
+  color: var(--error, #f4212e);
+}
+.edit-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface, transparent);
+  color: var(--text);
+  font: inherit;
+  font-size: 17px;
+  outline: none;
+  transition: border-color 0.12s ease;
+}
+.edit-input:focus {
+  border-color: var(--accent);
+}
+.edit-input.invalid {
+  border-color: var(--error, #f4212e);
+}
+.edit-textarea {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.4;
+}

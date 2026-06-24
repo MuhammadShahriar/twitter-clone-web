@@ -83,13 +83,15 @@ export interface UserSuggestion {
   followerCount: number;
 }
 
-/** Lite public profile (GET /api/users/{handle}); follow-state only in 3D. */
+/** Public profile (GET /api/users/{handle}); full profile fields in Module 4. */
 export interface UserProfile {
   id: string;
   handle: string;
   displayName: string;
   avatarUrl: string | null;
   bio: string | null;
+  /** Account creation time (ISO 8601 UTC) — drives the "Joined …" line (4B). */
+  createdAtUtc: string;
   followerCount: number;
   followingCount: number;
   tweetCount: number;
@@ -131,6 +133,22 @@ export interface CurrentUser {
   email: string;
   handle: string;
   displayName: string;
+  /** The signed-in user's avatar (Module 4A); null when unset. */
+  avatarUrl: string | null;
+}
+
+/**
+ * Updated user echoed by the profile-edit endpoints (PUT /api/users/me and the
+ * avatar POST/DELETE). A superset is fine — we only read these fields when
+ * applying the change to the header and auth state.
+ */
+export interface UserDto {
+  id: string;
+  handle: string;
+  displayName: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  createdAtUtc: string;
 }
 
 // ---- In-memory access token (NOT persisted anywhere) ----
@@ -435,6 +453,54 @@ export async function unretweetTweet(id: string): Promise<Tweet | null> {
   return readUpdatedTweet(res);
 }
 
+// ---- Profile edit: displayName/bio + avatar (Module 4A backend, 4C frontend) ----
+
+/** PUT /api/users/me — auth; update the signed-in user's displayName + bio. */
+export async function updateProfile(input: {
+  displayName: string;
+  bio: string;
+}): Promise<UserDto> {
+  const res = await fetchWithAuth("/api/users/me", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw await toApiError(res);
+  return res.json();
+}
+
+/**
+ * POST /api/users/me/avatar — auth; multipart single image. We deliberately do
+ * NOT set Content-Type (the browser adds the multipart boundary).
+ *
+ * NOTE: the multipart field name (`AVATAR_FIELD`) must match the 4A controller's
+ * IFormFile parameter name. If 4A names it differently (e.g. "image"/"avatar"),
+ * change the one constant below — it's the single source of truth.
+ */
+const AVATAR_FIELD = "file";
+
+export async function uploadAvatar(file: File): Promise<UserDto> {
+  const form = new FormData();
+  form.append(AVATAR_FIELD, file);
+  const res = await fetchWithAuth("/api/users/me/avatar", {
+    method: "POST",
+    headers: { Accept: "application/json" }, // no Content-Type: browser sets the boundary
+    body: form,
+  });
+  if (!res.ok) throw await toApiError(res);
+  return res.json();
+}
+
+/** DELETE /api/users/me/avatar — auth; clear the avatar. Returns the updated user. */
+export async function removeAvatar(): Promise<UserDto> {
+  const res = await fetchWithAuth("/api/users/me/avatar", {
+    method: "DELETE",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) throw await toApiError(res);
+  return res.json();
+}
+
 // ---- Follow graph + suggestions + following feed (Module 3B backend, 3D frontend) ----
 
 /** GET /api/users/suggestions?limit= — auth; users you don't follow yet. */
@@ -448,9 +514,24 @@ export async function getSuggestions(limit?: number): Promise<UserSuggestion[]> 
   return res.json();
 }
 
-/** GET /api/users/{handle} — public lite profile (follow-state in 3D). */
+/**
+ * Build the encoded path segment for the /api/users/{handle} family of routes.
+ *
+ * The app speaks **bare** handles everywhere — URLs are `/ada` (Twitter-style,
+ * no `@`) and the UI adds the `@` for display. The API, however, expects the
+ * handle **`@`-prefixed** (Module 4A, e.g. `@ada`). This is the single place
+ * that bridges the two: strip any leading `@`(s), add exactly one, then encode
+ * (so `@` becomes `%40`). Every user-scoped endpoint below routes through it, so
+ * the mapping lives in one spot rather than being scattered across call sites.
+ */
+function userHandleSegment(handle: string): string {
+  const bare = handle.replace(/^@+/, "");
+  return encodeURIComponent(`@${bare}`);
+}
+
+/** GET /api/users/{handle} — public profile (Module 4A). */
 export async function getUser(handle: string): Promise<UserProfile> {
-  const res = await fetchWithAuth(`/api/users/${encodeURIComponent(handle)}`, {
+  const res = await fetchWithAuth(`/api/users/${userHandleSegment(handle)}`, {
     cache: "no-store",
     headers: { Accept: "application/json" },
   });
@@ -458,10 +539,51 @@ export async function getUser(handle: string): Promise<UserProfile> {
   return res.json();
 }
 
+/**
+ * GET /api/users/{handle}/tweets?cursor=&limit= — public; the user's top-level
+ * tweets, newest-first, cursor-paginated (Module 4A). Authed when a token is
+ * present so the *ByCurrentUser flags fill (see getTweets).
+ */
+export async function getUserTweets(
+  handle: string,
+  opts: { cursor?: string | null; limit?: number } = {}
+): Promise<TweetPage> {
+  const params = new URLSearchParams();
+  if (opts.limit != null) params.set("limit", String(opts.limit));
+  if (opts.cursor) params.set("cursor", opts.cursor);
+  const query = params.toString();
+  const res = await fetchWithAuth(
+    `/api/users/${userHandleSegment(handle)}/tweets${query ? `?${query}` : ""}`,
+    { cache: "no-store", headers: { Accept: "application/json" } }
+  );
+  if (!res.ok) throw await toApiError(res);
+  return res.json();
+}
+
+/**
+ * GET /api/users/{handle}/likes?cursor=&limit= — public; tweets the user liked,
+ * most-recently-liked first, cursor-paginated (Module 4A). Authed like above.
+ */
+export async function getUserLikedTweets(
+  handle: string,
+  opts: { cursor?: string | null; limit?: number } = {}
+): Promise<TweetPage> {
+  const params = new URLSearchParams();
+  if (opts.limit != null) params.set("limit", String(opts.limit));
+  if (opts.cursor) params.set("cursor", opts.cursor);
+  const query = params.toString();
+  const res = await fetchWithAuth(
+    `/api/users/${userHandleSegment(handle)}/likes${query ? `?${query}` : ""}`,
+    { cache: "no-store", headers: { Accept: "application/json" } }
+  );
+  if (!res.ok) throw await toApiError(res);
+  return res.json();
+}
+
 /** POST /api/users/{handle}/follow — auth; idempotent. */
 export async function followUser(handle: string): Promise<void> {
   const res = await fetchWithAuth(
-    `/api/users/${encodeURIComponent(handle)}/follow`,
+    `/api/users/${userHandleSegment(handle)}/follow`,
     { method: "POST", headers: { Accept: "application/json" } }
   );
   if (!res.ok) throw await toApiError(res);
@@ -470,7 +592,7 @@ export async function followUser(handle: string): Promise<void> {
 /** DELETE /api/users/{handle}/follow — auth; idempotent. */
 export async function unfollowUser(handle: string): Promise<void> {
   const res = await fetchWithAuth(
-    `/api/users/${encodeURIComponent(handle)}/follow`,
+    `/api/users/${userHandleSegment(handle)}/follow`,
     { method: "DELETE", headers: { Accept: "application/json" } }
   );
   if (!res.ok) throw await toApiError(res);

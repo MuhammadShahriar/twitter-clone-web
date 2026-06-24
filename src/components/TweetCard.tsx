@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Tweet } from "@/lib/api";
 import { avatarColor, fmtCount, initials, relativeTime } from "@/lib/format";
@@ -87,6 +88,11 @@ export function TweetCard({
   }, [menuOpen]);
 
   const href = `/tweet/${tweet.id}`;
+  // Profile URLs use the bare handle (no `@`); the API/DTO handle may carry one.
+  const authorHref = `/${tweet.authorHandle.replace(/^@+/, "")}`;
+  // Author links live inside the card's role="link" click target, so they must
+  // stop propagation to avoid also triggering the tweet-detail navigation.
+  const stopCardNav = (e: React.MouseEvent) => e.stopPropagation();
 
   function openTweet() {
     router.push(href);
@@ -122,16 +128,25 @@ export function TweetCard({
       onKeyDown={onKeyDown}
       style={deleting ? { opacity: 0.5, pointerEvents: "none" } : undefined}
     >
-      <span
-        className="avatar"
-        style={{ background: avatarColor(tweet.authorHandle) }}
+      <Link
+        href={authorHref}
+        className="avatar-link"
+        onClick={stopCardNav}
+        aria-label={`${tweet.authorDisplayName} profile`}
       >
-        {initials(tweet.authorDisplayName)}
-      </span>
+        <span
+          className="avatar"
+          style={{ background: avatarColor(tweet.authorHandle) }}
+        >
+          {initials(tweet.authorDisplayName)}
+        </span>
+      </Link>
 
       <div className="tweet-main">
         <div className="tweet-head">
-          <span className="t-name">{tweet.authorDisplayName}</span>
+          <Link href={authorHref} className="t-name link-name" onClick={stopCardNav}>
+            {tweet.authorDisplayName}
+          </Link>
           <span className="t-handle">@{tweet.authorHandle}</span>
           <span className="t-dot">·</span>
           <span className="t-time">{relativeTime(tweet.createdAtUtc)}</span>

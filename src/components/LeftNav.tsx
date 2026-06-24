@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { avatarColor, initials } from "@/lib/format";
+import { Avatar } from "@/components/Avatar";
 import {
   IconBell,
   IconExplore,
@@ -79,11 +79,17 @@ export function LeftNav() {
       <ul className="nav-list">
         {NAV.map((it) => {
           const Ico = it.icon;
-          const isActive = it.id === "home" && pathname === "/";
+          // Profile routes to the signed-in user's own page once authenticated.
+          const profileHref =
+            isAuthenticated && user ? `/${user.handle.replace(/^@+/, "")}` : "/";
+          const href = it.id === "profile" ? profileHref : it.href;
+          const isActive =
+            (it.id === "home" && pathname === "/") ||
+            (it.id === "profile" && href !== "/" && pathname === href);
           return (
             <li key={it.id}>
               <Link
-                href={it.href}
+                href={href}
                 className={`nav-item ${isActive ? "active" : ""}`}
                 aria-current={isActive ? "page" : undefined}
               >
@@ -123,12 +129,12 @@ export function LeftNav() {
               aria-haspopup="menu"
               aria-expanded={menuOpen}
             >
-              <span
-                className="avatar sm"
-                style={{ background: avatarColor(user.handle) }}
-              >
-                {initials(user.displayName)}
-              </span>
+              <Avatar
+                seed={user.handle}
+                name={user.displayName}
+                src={user.avatarUrl}
+                className="sm"
+              />
               <span className="acct-meta">
                 <span className="acct-name">{user.displayName}</span>
                 <span className="acct-handle">@{user.handle}</span>
