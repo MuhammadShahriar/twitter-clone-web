@@ -1,36 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# twitter-clone-web
 
-## Getting Started
+Frontend for a Twitter clone — **Module 0: walking skeleton**.
 
-First, run the development server:
+This is an intentionally **unstyled, minimal** Next.js (App Router + TypeScript +
+Tailwind) app whose only job is to prove the full stack works end-to-end: read
+tweets from and post tweets to the live API. Real Twitter-styled UI / the locked
+design system arrive in later modules.
+
+## Tech stack
+
+- Next.js (App Router) + TypeScript
+- Tailwind CSS
+- Plain `fetch` — no state library, no UI kit
+
+## Run locally
+
+```bash
+npm install
+```
+
+Create a `.env.local` file (copy from `.env.example`):
+
+```bash
+# .env.local
+NEXT_PUBLIC_API_URL=https://twitter-clone-api-9zoz.onrender.com
+```
+
+Then start the dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open <http://localhost:3000>. The feed lists existing tweets; the form posts a
+new one and refreshes the list.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+> **Cold start:** the API is a free Render service and sleeps after idle. The
+> first request can take ~15-30s — the page shows a loading state, which is
+> expected, not an error.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment variables
 
-## Learn More
+| Variable              | Description                                  |
+| --------------------- | -------------------------------------------- |
+| `NEXT_PUBLIC_API_URL` | Base URL of the Twitter clone API (no trailing slash). |
 
-To learn more about Next.js, take a look at the following resources:
+## Deploy to Vercel
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Push this repo to GitHub.
+2. In the Vercel dashboard: **New Project** → import the repo (it auto-detects
+   Next.js).
+3. Add an environment variable **`NEXT_PUBLIC_API_URL`** =
+   `https://twitter-clone-api-9zoz.onrender.com` (for Production, Preview, and
+   Development).
+4. Deploy.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+> **CORS:** the API's allowed-origin config (`Cors__WebOrigin` on Render) must
+> include `http://localhost:3000` (local dev) and your Vercel URL (prod),
+> otherwise browser requests are blocked by CORS.
