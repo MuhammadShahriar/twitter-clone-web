@@ -54,6 +54,8 @@ export interface Tweet {
   authorId: string;
   authorHandle: string;
   authorDisplayName: string;
+  /** Author's uploaded avatar URL (Module 4B); null when unset → initials fallback. */
+  authorAvatarUrl: string | null;
   createdAtUtc: string; // ISO 8601 UTC
   /** Attached images, ordered (Module 2D); empty array when none. */
   media: TweetMedia[];

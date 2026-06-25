@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Tweet } from "@/lib/api";
-import { avatarColor, fmtCount, initials, relativeTime } from "@/lib/format";
+import { fmtCount, relativeTime } from "@/lib/format";
 import { useEngagement } from "@/lib/useEngagement";
+import { Avatar } from "@/components/Avatar";
 import { RichText } from "@/components/RichText";
 import { MediaGrid } from "@/components/MediaGrid";
 import {
@@ -134,12 +135,11 @@ export function TweetCard({
         onClick={stopCardNav}
         aria-label={`${tweet.authorDisplayName} profile`}
       >
-        <span
-          className="avatar"
-          style={{ background: avatarColor(tweet.authorHandle) }}
-        >
-          {initials(tweet.authorDisplayName)}
-        </span>
+        <Avatar
+          seed={tweet.authorHandle}
+          name={tweet.authorDisplayName}
+          src={tweet.authorAvatarUrl}
+        />
       </Link>
 
       <div className="tweet-main">

@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { Tweet } from "@/lib/api";
-import { absoluteTime, avatarColor, fmtCount, initials } from "@/lib/format";
+import { absoluteTime, fmtCount } from "@/lib/format";
 import { useEngagement } from "@/lib/useEngagement";
+import { Avatar } from "@/components/Avatar";
 import { RichText } from "@/components/RichText";
 import { MediaGrid } from "@/components/MediaGrid";
 import {
@@ -112,9 +113,12 @@ export function FocusedTweet({
     >
       <div className="focused-head">
         <Link href={authorHref} className="avatar-link" aria-label={`${tweet.authorDisplayName} profile`}>
-          <span className="avatar lg" style={{ background: avatarColor(tweet.authorHandle) }}>
-            {initials(tweet.authorDisplayName)}
-          </span>
+          <Avatar
+            seed={tweet.authorHandle}
+            name={tweet.authorDisplayName}
+            src={tweet.authorAvatarUrl}
+            className="lg"
+          />
         </Link>
         <div className="focused-id">
           <Link href={authorHref} className="focused-name link-name">
