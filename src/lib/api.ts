@@ -477,7 +477,7 @@ export async function updateProfile(input: {
  * IFormFile parameter name. If 4A names it differently (e.g. "image"/"avatar"),
  * change the one constant below — it's the single source of truth.
  */
-const AVATAR_FIELD = "file";
+const AVATAR_FIELD = "image";
 
 export async function uploadAvatar(file: File): Promise<UserDto> {
   const form = new FormData();
