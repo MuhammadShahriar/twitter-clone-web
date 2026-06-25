@@ -168,6 +168,25 @@ body {
   background: var(--accent);
   border: 2px solid var(--bg);
 }
+/* Numeric unread badge on the notifications bell (Module 5C). */
+.nav-badge-count {
+  position: absolute;
+  top: -6px;
+  left: 12px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .nav-label {
   padding-right: 16px;
 }
@@ -1680,4 +1699,78 @@ body {
   resize: vertical;
   min-height: 80px;
   line-height: 1.4;
+}
+
+/* ---- Notifications list (Module 5C) ---- */
+.notif-row {
+  display: flex;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.12s ease;
+}
+.notif-row:hover {
+  background: var(--row-hover);
+}
+.notif-row.unread {
+  background: rgba(29, 155, 240, 0.08);
+}
+.notif-row.unread:hover {
+  background: rgba(29, 155, 240, 0.12);
+}
+.notif-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.notif-gutter {
+  width: 32px;
+  flex: none;
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 2px;
+}
+.notif-content {
+  flex: 1;
+  min-width: 0;
+}
+.notif-avatars {
+  display: flex;
+  align-items: center;
+  margin-bottom: 9px;
+}
+.notif-avatars .avatar {
+  width: 34px;
+  height: 34px;
+  font-size: 14px;
+}
+.notif-text {
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--text);
+}
+.notif-text b {
+  font-weight: 700;
+}
+.notif-snippet {
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  word-wrap: break-word;
+}
+.notif-time {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+.notif-dot {
+  position: absolute;
+  right: 18px;
+  top: 18px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
 }

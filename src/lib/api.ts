@@ -107,6 +107,43 @@ export interface TweetPage {
   nextCursor: string | null;
 }
 
+// ---- Notifications (Module 5) ----
+
+/** The kinds of notification the backend emits. */
+export type NotificationType = "Like" | "Follow" | "Reply" | "Retweet";
+
+/** The user who triggered a notification (the "actor"). */
+export interface NotificationActor {
+  handle: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
+/** One notification (GET /api/notifications item, and the SignalR push payload). */
+export interface Notification {
+  id: string;
+  type: NotificationType;
+  isRead: boolean;
+  createdAtUtc: string; // ISO 8601 UTC
+  actor: NotificationActor;
+  /** The related tweet for Like/Reply/Retweet; null for Follow. */
+  tweetId: string | null;
+  /** A short excerpt of the related tweet, when present. */
+  tweetPreview: string | null;
+}
+
+/** A cursor-paginated page of notifications (GET /api/notifications). */
+export interface NotificationPage {
+  items: Notification[];
+  nextCursor: string | null;
+}
+
+/** Payload pushed over SignalR on the `ReceiveNotification` event. */
+export interface NotificationPush {
+  notification: Notification;
+  unreadCount: number;
+}
+
 /** Body of POST /api/auth/login and /api/auth/refresh (AuthenticationResult). */
 export interface AuthSession {
   accessToken: string;
@@ -156,6 +193,9 @@ export interface UserDto {
 // ---- In-memory access token (NOT persisted anywhere) ----
 
 let accessToken: string | null = null;
+// Epoch ms when the current access token expires (0 when none). Used only to
+// decide whether the SignalR access-token factory should pre-emptively refresh.
+let accessTokenExpiryMs = 0;
 
 export function getAccessToken(): string | null {
   return accessToken;
@@ -163,6 +203,13 @@ export function getAccessToken(): string | null {
 
 export function setAccessToken(token: string | null): void {
   accessToken = token;
+  if (token === null) accessTokenExpiryMs = 0;
+}
+
+/** Record the access token's expiry (from AuthSession.expiresAtUtc). */
+function setAccessTokenExpiry(expiresAtUtc: string): void {
+  const ms = new Date(expiresAtUtc).getTime();
+  accessTokenExpiryMs = Number.isNaN(ms) ? 0 : ms;
 }
 
 // The AuthProvider registers this so a failed silent refresh can clear React state.
@@ -218,6 +265,7 @@ export async function login(email: string, password: string): Promise<AuthSessio
   if (!res.ok) throw await toApiError(res);
   const session: AuthSession = await res.json();
   setAccessToken(session.accessToken);
+  setAccessTokenExpiry(session.expiresAtUtc);
   return session;
 }
 
@@ -231,6 +279,7 @@ export async function refresh(): Promise<AuthSession> {
   if (!res.ok) throw await toApiError(res);
   const session: AuthSession = await res.json();
   setAccessToken(session.accessToken);
+  setAccessTokenExpiry(session.expiresAtUtc);
   return session;
 }
 
@@ -280,6 +329,30 @@ function authedFetch(path: string, init: RequestInit): Promise<Response> {
   const token = getAccessToken();
   if (token) headers.set("Authorization", `Bearer ${token}`);
   return fetch(apiUrl(path), { ...init, headers, credentials: "include" });
+}
+
+/**
+ * Token source for the SignalR `accessTokenFactory` (Module 5). SignalR calls
+ * this on every (re)connect; it must hand back the *current* in-memory access
+ * token — the same one `fetchWithAuth` sends — so the socket authenticates with
+ * a live JWT. When there is no token, or it is within 30s of expiry, it goes
+ * through the same de-duped refresh path as a 401 to mint a fresh one first.
+ * The token is never persisted anywhere new; it is only read from memory here.
+ */
+export async function getAccessTokenForSocket(): Promise<string> {
+  const SKEW_MS = 30_000;
+  const current = getAccessToken();
+  if (current && Date.now() < accessTokenExpiryMs - SKEW_MS) return current;
+  const fresh = await refreshAccessToken();
+  return fresh ?? current ?? "";
+}
+
+/** Absolute URL of the notifications SignalR hub ({API_ORIGIN}/hubs/notifications). */
+export function notificationsHubUrl(): string {
+  if (!baseUrl) {
+    throw new Error("NEXT_PUBLIC_API_URL is not set. Add it to .env.local.");
+  }
+  return `${baseUrl}/hubs/notifications`;
 }
 
 /**
@@ -615,6 +688,47 @@ export async function getFollowingFeed(
     `/api/feed/following${query ? `?${query}` : ""}`,
     { cache: "no-store", headers: { Accept: "application/json" } }
   );
+  if (!res.ok) throw await toApiError(res);
+  return res.json();
+}
+
+// ---- Notifications (Module 5: REST reads + mark-all-read) ----
+
+/**
+ * GET /api/notifications?cursor=&limit= — auth; the signed-in user's
+ * notifications, newest first, cursor-paginated (same shape as the feeds).
+ */
+export async function getNotifications(
+  opts: { cursor?: string | null; limit?: number } = {}
+): Promise<NotificationPage> {
+  const params = new URLSearchParams();
+  if (opts.limit != null) params.set("limit", String(opts.limit));
+  if (opts.cursor) params.set("cursor", opts.cursor);
+  const query = params.toString();
+  const res = await fetchWithAuth(
+    `/api/notifications${query ? `?${query}` : ""}`,
+    { cache: "no-store", headers: { Accept: "application/json" } }
+  );
+  if (!res.ok) throw await toApiError(res);
+  return res.json();
+}
+
+/** GET /api/notifications/unread-count — auth; the unread badge count. */
+export async function getUnreadCount(): Promise<{ unreadCount: number }> {
+  const res = await fetchWithAuth("/api/notifications/unread-count", {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) throw await toApiError(res);
+  return res.json();
+}
+
+/** POST /api/notifications/read — auth; marks all read. Returns `{ unreadCount: 0 }`. */
+export async function markNotificationsRead(): Promise<{ unreadCount: number }> {
+  const res = await fetchWithAuth("/api/notifications/read", {
+    method: "POST",
+    headers: { Accept: "application/json" },
+  });
   if (!res.ok) throw await toApiError(res);
   return res.json();
 }

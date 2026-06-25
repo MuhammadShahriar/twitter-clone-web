@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useNotifications } from "@/context/NotificationsContext";
 import { Avatar } from "@/components/Avatar";
 import {
   IconBell,
@@ -36,7 +37,7 @@ type NavItem = {
 const NAV: NavItem[] = [
   { id: "home", label: "Home", href: "/", icon: IconHome },
   { id: "explore", label: "Explore", href: "/", icon: IconExplore },
-  { id: "notif", label: "Notifications", href: "/", icon: IconBell, badge: true },
+  { id: "notif", label: "Notifications", href: "/notifications", icon: IconBell, badge: true },
   { id: "msg", label: "Messages", href: "/", icon: IconMail },
   { id: "bookmarks", label: "Bookmarks", href: "/", icon: IconBookmarkNav },
   { id: "profile", label: "Profile", href: "/", icon: IconUser },
@@ -47,6 +48,7 @@ export function LeftNav() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const { unreadCount } = useNotifications();
   const [menuOpen, setMenuOpen] = useState(false);
   const chipRef = useRef<HTMLDivElement | null>(null);
 
@@ -85,7 +87,11 @@ export function LeftNav() {
           const href = it.id === "profile" ? profileHref : it.href;
           const isActive =
             (it.id === "home" && pathname === "/") ||
+            (it.id === "notif" && pathname === "/notifications") ||
             (it.id === "profile" && href !== "/" && pathname === href);
+          // The notifications bell shows a live unread count; other "badge"
+          // items keep the plain dot placeholder.
+          const showCount = it.id === "notif" && unreadCount > 0;
           return (
             <li key={it.id}>
               <Link
@@ -95,7 +101,18 @@ export function LeftNav() {
               >
                 <span className="nav-ico">
                   <Ico on={isActive} />
-                  {it.badge && !isActive && <span className="nav-badge" />}
+                  {showCount ? (
+                    <span
+                      className="nav-badge-count"
+                      aria-label={`${unreadCount} unread notifications`}
+                    >
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  ) : (
+                    it.badge && it.id !== "notif" && !isActive && (
+                      <span className="nav-badge" />
+                    )
+                  )}
                 </span>
                 <span className="nav-label">{it.label}</span>
               </Link>
