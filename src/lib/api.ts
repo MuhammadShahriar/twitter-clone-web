@@ -113,6 +113,28 @@ export interface TweetPage {
   nextCursor: string | null;
 }
 
+/**
+ * One user row in a followers/following list (Module 7A). Public-readable; the
+ * `isFollowedByCurrentUser` flag is false for an anonymous caller and drives the
+ * follow-back button's initial state.
+ */
+export interface UserListItem {
+  id: string;
+  handle: string;
+  displayName: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  followerCount: number;
+  followingCount: number;
+  isFollowedByCurrentUser: boolean;
+}
+
+/** A cursor-paginated page of users (followers/following lists). */
+export interface UserListPage {
+  items: UserListItem[];
+  nextCursor: string | null;
+}
+
 // ---- Notifications (Module 5) ----
 
 /** The kinds of notification the backend emits. */
@@ -701,6 +723,48 @@ export async function getUserLikedTweets(
   const query = params.toString();
   const res = await fetchWithAuth(
     `/api/users/${userHandleSegment(handle)}/likes${query ? `?${query}` : ""}`,
+    { cache: "no-store", headers: { Accept: "application/json" } }
+  );
+  if (!res.ok) throw await toApiError(res);
+  return res.json();
+}
+
+/**
+ * GET /api/users/{handle}/followers?cursor=&limit= — public; users who follow
+ * {handle}, **newest-follow first**, cursor-paginated (Module 7A). Authed when a
+ * token is present so each row's `isFollowedByCurrentUser` fills (see getTweets);
+ * still works anonymously (flag false). 404 on an unknown handle.
+ */
+export async function getFollowers(
+  handle: string,
+  opts: { cursor?: string | null; limit?: number } = {}
+): Promise<UserListPage> {
+  const params = new URLSearchParams();
+  if (opts.limit != null) params.set("limit", String(opts.limit));
+  if (opts.cursor) params.set("cursor", opts.cursor);
+  const query = params.toString();
+  const res = await fetchWithAuth(
+    `/api/users/${userHandleSegment(handle)}/followers${query ? `?${query}` : ""}`,
+    { cache: "no-store", headers: { Accept: "application/json" } }
+  );
+  if (!res.ok) throw await toApiError(res);
+  return res.json();
+}
+
+/**
+ * GET /api/users/{handle}/following?cursor=&limit= — public; users {handle}
+ * follows, cursor-paginated (Module 7A). Authed like getFollowers. 404 on unknown.
+ */
+export async function getFollowing(
+  handle: string,
+  opts: { cursor?: string | null; limit?: number } = {}
+): Promise<UserListPage> {
+  const params = new URLSearchParams();
+  if (opts.limit != null) params.set("limit", String(opts.limit));
+  if (opts.cursor) params.set("cursor", opts.cursor);
+  const query = params.toString();
+  const res = await fetchWithAuth(
+    `/api/users/${userHandleSegment(handle)}/following${query ? `?${query}` : ""}`,
     { cache: "no-store", headers: { Accept: "application/json" } }
   );
   if (!res.ok) throw await toApiError(res);

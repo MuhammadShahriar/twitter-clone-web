@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ApiError,
@@ -20,38 +21,11 @@ import { FollowButton } from "@/components/FollowButton";
 import { TweetCard } from "@/components/TweetCard";
 import { IconBack, IconCalendar, IconRetweet } from "@/components/icons";
 import { fmtCount, monthYear } from "@/lib/format";
+import { bare, isReservedHandle } from "@/lib/handles";
 
 const PAGE_SIZE = 20;
 type Tab = "tweets" | "likes";
 type Status = "loading" | "ready" | "notfound" | "error";
-
-/**
- * App paths that must never be treated as a profile handle. Literal routes
- * (/login, /register, /tweet/…) already take precedence over the dynamic
- * `[handle]` segment in the App Router, so this is a belt-and-suspenders guard
- * that also covers reserved words which don't have a literal route yet — we
- * short-circuit to the not-found state instead of querying the API for them.
- */
-const RESERVED_HANDLES = new Set([
-  "login",
-  "register",
-  "tweet",
-  "home",
-  "explore",
-  "notifications",
-  "messages",
-  "bookmarks",
-  "settings",
-  "compose",
-  "search",
-  "i",
-  "api",
-]);
-
-/** Bare (no leading @) form, for comparing/keying handles consistently. */
-function bare(handle: string): string {
-  return handle.replace(/^@+/, "");
-}
 
 function mergeUnique(existing: Tweet[], incoming: Tweet[]): Tweet[] {
   const seen = new Set(existing.map((t) => t.id));
@@ -90,7 +64,7 @@ export function Profile({ handle }: { handle: string }) {
   // switch can't render the previous tab's tweets into the new one.
   const listGen = useRef(0);
 
-  const isReserved = RESERVED_HANDLES.has(handle.toLowerCase());
+  const isReserved = isReservedHandle(handle);
 
   // Load the profile header. Wait for the auth bootstrap so isFollowedByCurrentUser
   // and the tweets' *ByCurrentUser flags come back correct (same guard as Feed).
@@ -347,12 +321,18 @@ export function Profile({ handle }: { handle: string }) {
               </span>
             </div>
             <div className="profile-counts">
-              <span className="profile-count">
+              <Link
+                href={`/${bare(profile.handle)}/following`}
+                className="profile-count"
+              >
                 <b>{fmtCount(profile.followingCount)}</b>Following
-              </span>
-              <span className="profile-count">
+              </Link>
+              <Link
+                href={`/${bare(profile.handle)}/followers`}
+                className="profile-count"
+              >
                 <b>{fmtCount(profile.followerCount)}</b>Followers
-              </span>
+              </Link>
             </div>
           </div>
 
