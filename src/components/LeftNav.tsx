@@ -39,7 +39,7 @@ const NAV: NavItem[] = [
   { id: "explore", label: "Explore", href: "/", icon: IconExplore },
   { id: "notif", label: "Notifications", href: "/notifications", icon: IconBell, badge: true },
   { id: "msg", label: "Messages", href: "/", icon: IconMail },
-  { id: "bookmarks", label: "Bookmarks", href: "/", icon: IconBookmarkNav },
+  { id: "bookmarks", label: "Bookmarks", href: "/bookmarks", icon: IconBookmarkNav },
   { id: "profile", label: "Profile", href: "/", icon: IconUser },
   { id: "more", label: "More", href: "/", icon: IconMoreCircle },
 ];
@@ -88,6 +88,7 @@ export function LeftNav() {
           const isActive =
             (it.id === "home" && pathname === "/") ||
             (it.id === "notif" && pathname === "/notifications") ||
+            (it.id === "bookmarks" && pathname === "/bookmarks") ||
             (it.id === "profile" && href !== "/" && pathname === href);
           // The notifications bell shows a live unread count; other "badge"
           // items keep the plain dot placeholder.

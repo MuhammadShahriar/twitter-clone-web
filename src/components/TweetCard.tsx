@@ -28,9 +28,10 @@ type ActionProps = {
   children: React.ReactNode;
 };
 
-// Action-bar button. like/retweet are functional with optimistic state from
-// Module 3C; bookmark/share stay visual-only (bookmark may land later, share is
-// out of scope). reply/like/retweet counts are real (from the DTO).
+// Action-bar button. like/retweet/bookmark are functional with optimistic state
+// (like/retweet from Module 3C, bookmark from 6B); share stays visual-only (out
+// of scope). reply/like/retweet show real counts; bookmark is a private toggle
+// with no count.
 function Action({ type, count, active, label, onClick, children }: ActionProps) {
   const [popped, setPopped] = useState(false);
   const handle = (e: React.MouseEvent) => {
@@ -69,9 +70,7 @@ export function TweetCard({
   onEngage?: (id: string, patch: Partial<Tweet>) => void;
 }) {
   const router = useRouter();
-  const { toggleLike, toggleRetweet } = useEngagement(tweet, onEngage);
-  // bookmark stays a local visual placeholder (not wired in 3C).
-  const [bookmarked, setBookmarked] = useState(false);
+  const { toggleLike, toggleRetweet, toggleBookmark } = useEngagement(tweet, onEngage);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -214,11 +213,11 @@ export function TweetCard({
           </Action>
           <Action
             type="bookmark"
-            label="Bookmark"
-            active={bookmarked}
-            onClick={() => setBookmarked((v) => !v)}
+            label={tweet.bookmarkedByCurrentUser ? "Remove bookmark" : "Bookmark"}
+            active={tweet.bookmarkedByCurrentUser}
+            onClick={toggleBookmark}
           >
-            <IconBookmark on={bookmarked} />
+            <IconBookmark on={tweet.bookmarkedByCurrentUser} />
           </Action>
           <Action type="share" label="Share">
             <IconShare />

@@ -68,6 +68,12 @@ export interface Tweet {
   /** Whether the authenticated caller has retweeted this tweet (false when anonymous). */
   retweetedByCurrentUser: boolean;
   /**
+   * Whether the authenticated caller has bookmarked this tweet (false when
+   * anonymous). Bookmarks are private (Module 6) — there is deliberately NO
+   * bookmark count, only this per-caller flag.
+   */
+  bookmarkedByCurrentUser: boolean;
+  /**
    * The follower whose retweet surfaced this tweet in the Following feed
    * (Module 3B/3D). Null for normal items and outside that feed.
    */
@@ -526,6 +532,52 @@ export async function unretweetTweet(id: string): Promise<Tweet | null> {
   });
   if (!res.ok) throw await toApiError(res);
   return readUpdatedTweet(res);
+}
+
+// ---- Bookmarks (Module 6: private saves — toggle + list, no count) ----
+
+/**
+ * POST /api/tweets/{id}/bookmark — auth; idempotent. Returns the updated tweet
+ * (with `bookmarkedByCurrentUser: true`). Mirrors like/retweet, but bookmarks
+ * are private so there is no count to reconcile — only the flag.
+ */
+export async function bookmarkTweet(id: string): Promise<Tweet | null> {
+  const res = await fetchWithAuth(`/api/tweets/${id}/bookmark`, {
+    method: "POST",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) throw await toApiError(res);
+  return readUpdatedTweet(res);
+}
+
+/** DELETE /api/tweets/{id}/bookmark — auth; idempotent. Returns the updated tweet. */
+export async function unbookmarkTweet(id: string): Promise<Tweet | null> {
+  const res = await fetchWithAuth(`/api/tweets/${id}/bookmark`, {
+    method: "DELETE",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) throw await toApiError(res);
+  return readUpdatedTweet(res);
+}
+
+/**
+ * GET /api/bookmarks?cursor=&limit= — auth-only; the caller's bookmarked tweets,
+ * newest-saved first, cursor-paginated (same page shape as the feeds). Private:
+ * each item carries `bookmarkedByCurrentUser: true`.
+ */
+export async function getBookmarks(
+  opts: { cursor?: string | null; limit?: number } = {}
+): Promise<TweetPage> {
+  const params = new URLSearchParams();
+  if (opts.limit != null) params.set("limit", String(opts.limit));
+  if (opts.cursor) params.set("cursor", opts.cursor);
+  const query = params.toString();
+  const res = await fetchWithAuth(`/api/bookmarks${query ? `?${query}` : ""}`, {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) throw await toApiError(res);
+  return res.json();
 }
 
 // ---- Profile edit: displayName/bio + avatar (Module 4A backend, 4C frontend) ----

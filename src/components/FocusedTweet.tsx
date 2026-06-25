@@ -66,11 +66,9 @@ export function FocusedTweet({
   /** Field-scoped patch for the focused tweet after an optimistic like/retweet (Module 3C). */
   onEngage?: (id: string, patch: Partial<Tweet>) => void;
 }) {
-  const { toggleLike, toggleRetweet } = useEngagement(tweet, onEngage);
+  const { toggleLike, toggleRetweet, toggleBookmark } = useEngagement(tweet, onEngage);
   // Profile URLs use the bare handle (no `@`); the DTO handle may carry one.
   const authorHref = `/${tweet.authorHandle.replace(/^@+/, "")}`;
-  // bookmark stays a local visual placeholder (not wired in 3C).
-  const [bookmarked, setBookmarked] = useState(false);
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -87,12 +85,12 @@ export function FocusedTweet({
     return () => document.removeEventListener("mousedown", onDocClick);
   }, [menuOpen]);
 
-  // Real engagement counts (Module 3C); bookmark is still a local visual toggle.
+  // Real engagement counts (Module 3C). Bookmarks are private (Module 6) — no
+  // count is shown anywhere, so they're deliberately absent from the stats bar.
   const stats: Array<[number, string]> = [
     [replyCount, replyCount === 1 ? "Reply" : "Replies"],
     [tweet.retweetCount, "Reposts"],
     [tweet.likeCount, "Likes"],
-    [bookmarked ? 1 : 0, "Bookmarks"],
   ];
   const shownStats = stats.filter(([n]) => n > 0);
 
@@ -196,11 +194,11 @@ export function FocusedTweet({
         </BigAction>
         <BigAction
           type="bookmark"
-          label="Bookmark"
-          active={bookmarked}
-          onClick={() => setBookmarked((v) => !v)}
+          label={tweet.bookmarkedByCurrentUser ? "Remove bookmark" : "Bookmark"}
+          active={tweet.bookmarkedByCurrentUser}
+          onClick={toggleBookmark}
         >
-          <IconBookmark size={22} on={bookmarked} />
+          <IconBookmark size={22} on={tweet.bookmarkedByCurrentUser} />
         </BigAction>
         <BigAction type="share" label="Share">
           <IconShare size={22} />
