@@ -138,7 +138,7 @@ export interface UserListPage {
 // ---- Notifications (Module 5) ----
 
 /** The kinds of notification the backend emits. */
-export type NotificationType = "Like" | "Follow" | "Reply" | "Retweet";
+export type NotificationType = "Like" | "Follow" | "Reply" | "Retweet" | "Mention";
 
 /** The user who triggered a notification (the "actor"). */
 export interface NotificationActor {
@@ -154,7 +154,7 @@ export interface Notification {
   isRead: boolean;
   createdAtUtc: string; // ISO 8601 UTC
   actor: NotificationActor;
-  /** The related tweet for Like/Reply/Retweet; null for Follow. */
+  /** The related tweet for Like/Reply/Retweet/Mention; null for Follow. */
   tweetId: string | null;
   /** A short excerpt of the related tweet, when present. */
   tweetPreview: string | null;

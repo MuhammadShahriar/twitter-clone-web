@@ -49,6 +49,13 @@ export const IconRetweet = (p: IcoProps) => (
     <path d="m4 13 3-3 3 3" />
   </Svg>
 );
+/** @-glyph for Mention notifications (Module 9B). */
+export const IconAt = (p: IcoProps) => (
+  <Svg {...p}>
+    <circle cx="12" cy="12" r="4" />
+    <path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-3.92 7.94" />
+  </Svg>
+);
 export const IconLike = ({ on, ...p }: IcoProps & { on?: boolean }) => (
   <Svg fill={on} {...p}>
     <path d="M12 20.5S3.5 15.5 3.5 9.5C3.5 6.6 5.8 4.5 8.4 4.5c1.7 0 3.1 1 3.6 2.4C12.5 5.5 13.9 4.5 15.6 4.5c2.6 0 4.9 2.1 4.9 5 0 6-8.5 11-8.5 11z" />

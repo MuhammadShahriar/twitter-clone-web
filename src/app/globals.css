@@ -675,6 +675,15 @@ body {
 .tweet-body .tag {
   color: var(--accent);
 }
+/* @mention / #hashtag links (RichText, Module 9B): accent like the highlight
+   span, Twitter-style no underline until hover. Scoped to anchors so the plain
+   highlight spans (non-ASCII/Bangla tags) are unaffected. */
+a.tag {
+  text-decoration: none;
+}
+a.tag:hover {
+  text-decoration: underline;
+}
 .actions {
   display: flex;
   justify-content: space-between;

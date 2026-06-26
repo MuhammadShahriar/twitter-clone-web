@@ -51,6 +51,8 @@ function toastText(n: Notification): string {
       return `${who} replied to your post`;
     case "Follow":
       return `${who} followed you`;
+    case "Mention":
+      return `${who} mentioned you`;
     default:
       return "New notification";
   }

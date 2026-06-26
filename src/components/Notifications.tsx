@@ -11,7 +11,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/context/NotificationsContext";
 import { Avatar } from "@/components/Avatar";
 import { relativeTime } from "@/lib/format";
-import { IconLike, IconPersonPlus, IconReply, IconRetweet } from "@/components/icons";
+import { IconAt, IconLike, IconPersonPlus, IconReply, IconRetweet } from "@/components/icons";
 
 const PAGE_SIZE = 20;
 
@@ -50,6 +50,12 @@ function TypeIcon({ type }: { type: Notification["type"] }) {
           <IconPersonPlus size={26} />
         </span>
       );
+    case "Mention":
+      return (
+        <span style={{ color: "var(--accent)" }}>
+          <IconAt size={26} />
+        </span>
+      );
     default:
       return null;
   }
@@ -66,6 +72,8 @@ function actionText(type: Notification["type"]): string {
       return "replied to your post";
     case "Follow":
       return "followed you";
+    case "Mention":
+      return "mentioned you";
     default:
       return "";
   }
