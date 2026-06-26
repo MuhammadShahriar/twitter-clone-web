@@ -4,13 +4,18 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Tweet } from "@/lib/api";
-import { fmtCount, relativeTime } from "@/lib/format";
+import { fmtCount, relativeTime, withinEditWindow } from "@/lib/format";
 import { useEngagement } from "@/lib/useEngagement";
+import { useQuoteComposer } from "@/context/QuoteComposerContext";
 import { Avatar } from "@/components/Avatar";
 import { RichText } from "@/components/RichText";
 import { MediaGrid } from "@/components/MediaGrid";
+import { QuoteEmbed, toQuotedPreview } from "@/components/QuotedTweetCard";
+import { RepostMenu } from "@/components/RepostMenu";
+import { EditTweetModal } from "@/components/EditTweetModal";
 import {
   IconBookmark,
+  IconEdit,
   IconLike,
   IconMore,
   IconReply,
@@ -71,10 +76,17 @@ export function TweetCard({
 }) {
   const router = useRouter();
   const { toggleLike, toggleRetweet, toggleBookmark } = useEngagement(tweet, onEngage);
+  const { openQuote } = useQuoteComposer();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editing, setEditing] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+
+  // Edit is author-only (same gate as Delete) AND only within the edit window —
+  // past it the API returns 409, so hiding it is the clean UX. Recomputed each
+  // render (e.g. when the menu opens), so it's fresh enough without a timer.
+  const canEdit = canDelete && withinEditWindow(tweet.createdAtUtc);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -119,6 +131,7 @@ export function TweetCard({
   }
 
   return (
+    <>
     <article
       className="tweet"
       role="link"
@@ -149,6 +162,14 @@ export function TweetCard({
           <span className="t-handle">@{tweet.authorHandle}</span>
           <span className="t-dot">·</span>
           <span className="t-time">{relativeTime(tweet.createdAtUtc)}</span>
+          {tweet.editedAtUtc && (
+            <>
+              <span className="t-dot">·</span>
+              <span className="t-edited" title="Edited">
+                Edited
+              </span>
+            </>
+          )}
 
           {canDelete && (
             <div ref={menuRef} style={{ marginLeft: "auto", position: "relative" }}>
@@ -168,6 +189,20 @@ export function TweetCard({
               </button>
               {menuOpen && (
                 <div className="tweet-menu" role="menu">
+                  {canEdit && (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuOpen(false);
+                        setEditing(true);
+                      }}
+                    >
+                      <IconEdit size={18} />
+                      Edit
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="danger"
@@ -189,19 +224,38 @@ export function TweetCard({
 
         <MediaGrid media={tweet.media} />
 
+        <QuoteEmbed tweet={tweet} />
+
         <div className="actions">
           <Action type="reply" label="Reply" count={tweet.replyCount}>
             <IconReply />
           </Action>
-          <Action
-            type="retweet"
-            label={tweet.retweetedByCurrentUser ? "Undo repost" : "Repost"}
-            active={tweet.retweetedByCurrentUser}
-            count={tweet.retweetCount}
-            onClick={toggleRetweet}
+          <RepostMenu
+            reposted={tweet.retweetedByCurrentUser}
+            onRepost={toggleRetweet}
+            onQuote={() => openQuote(toQuotedPreview(tweet))}
           >
-            <IconRetweet />
-          </Action>
+            {({ toggle, open }) => (
+              <button
+                type="button"
+                className={`action retweet ${tweet.retweetedByCurrentUser ? "on" : ""}`}
+                aria-label={tweet.retweetedByCurrentUser ? "Undo repost" : "Repost"}
+                aria-haspopup="menu"
+                aria-expanded={open}
+                onClick={(e) => {
+                  e.stopPropagation(); // never trigger the card-click navigation
+                  toggle();
+                }}
+              >
+                <span className="ico">
+                  <IconRetweet />
+                </span>
+                <span className="cnt">
+                  {tweet.retweetCount > 0 ? fmtCount(tweet.retweetCount) : ""}
+                </span>
+              </button>
+            )}
+          </RepostMenu>
           <Action
             type="like"
             label={tweet.likedByCurrentUser ? "Unlike" : "Like"}
@@ -225,5 +279,21 @@ export function TweetCard({
         </div>
       </div>
     </article>
+
+      {/* Rendered as a sibling of the card (not a child) so its clicks never bubble
+          to the card's role="link" navigation — no stopPropagation gymnastics. */}
+      {editing && (
+        <EditTweetModal
+          tweet={tweet}
+          onEdited={(updated) =>
+            onEngage?.(tweet.id, {
+              content: updated.content,
+              editedAtUtc: updated.editedAtUtc,
+            })
+          }
+          onClose={() => setEditing(false)}
+        />
+      )}
+    </>
   );
 }

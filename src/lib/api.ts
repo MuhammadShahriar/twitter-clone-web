@@ -44,6 +44,26 @@ export interface RetweetedBy {
   displayName: string;
 }
 
+/** The author of a quoted tweet preview (Module 10). */
+export interface QuotedTweetAuthor {
+  handle: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
+/**
+ * One-level preview of the tweet a quote tweet embeds (Module 10B). Deliberately
+ * flat — it carries no `quotedTweet` of its own, so the embedded card never
+ * recurses (the backend preview is one level deep).
+ */
+export interface QuotedTweet {
+  id: string;
+  content: string;
+  author: QuotedTweetAuthor;
+  media: TweetMedia[];
+  createdAtUtc: string; // ISO 8601 UTC
+}
+
 export interface Tweet {
   id: string;
   content: string;
@@ -57,6 +77,11 @@ export interface Tweet {
   /** Author's uploaded avatar URL (Module 4B); null when unset → initials fallback. */
   authorAvatarUrl: string | null;
   createdAtUtc: string; // ISO 8601 UTC
+  /**
+   * When the tweet was last edited (Module 11), or null/absent if never edited.
+   * Drives the subtle "· Edited" marker; `createdAtUtc` is unchanged by an edit.
+   */
+  editedAtUtc?: string | null;
   /** Attached images, ordered (Module 2D); empty array when none. */
   media: TweetMedia[];
   /** Total likes (Module 3A). */
@@ -78,6 +103,20 @@ export interface Tweet {
    * (Module 3B/3D). Null for normal items and outside that feed.
    */
   retweetedBy?: RetweetedBy | null;
+  /**
+   * Whether this tweet was created as a quote (Module 10). The delete-surviving
+   * signal the UI uses to tell a non-quote (false → render nothing) from a quote
+   * whose target was deleted (true, but `quotedTweet` null → "unavailable"). The
+   * quote self-FK is `SET NULL`, so `quotedTweet` alone can't make that distinction.
+   */
+  isQuote?: boolean;
+  /**
+   * One-level preview of the quoted tweet (Module 10B). Null when this is a quote
+   * whose target was deleted; null/absent for non-quote tweets (use `isQuote`).
+   */
+  quotedTweet?: QuotedTweet | null;
+  /** How many times this tweet has been quoted (Module 10). */
+  quoteCount?: number;
 }
 
 /** A user surfaced by GET /api/users/suggestions (Module 3D). */
@@ -138,7 +177,13 @@ export interface UserListPage {
 // ---- Notifications (Module 5) ----
 
 /** The kinds of notification the backend emits. */
-export type NotificationType = "Like" | "Follow" | "Reply" | "Retweet" | "Mention";
+export type NotificationType =
+  | "Like"
+  | "Follow"
+  | "Reply"
+  | "Retweet"
+  | "Mention"
+  | "Quote";
 
 /** The user who triggered a notification (the "actor"). */
 export interface NotificationActor {
@@ -463,6 +508,11 @@ export interface CreateTweetInput {
   content: string;
   /** Set to post a reply (used by the thread page in 2C). */
   parentId?: string;
+  /**
+   * Set to post a quote tweet (Module 10B): the id of the tweet being quoted.
+   * A quote must carry non-empty `content`; a missing/unknown id → 404 from the API.
+   */
+  quotedTweetId?: string;
   /** Up to 4 images (Module 2D); uploaded to Cloudinary by the backend. */
   images?: File[];
 }
@@ -475,16 +525,32 @@ export interface CreateTweetInput {
  * Content-Type header — the browser must add the multipart boundary itself.
  */
 export async function createTweet(input: CreateTweetInput): Promise<Tweet> {
-  const { content, parentId, images } = input;
+  const { content, parentId, quotedTweetId, images } = input;
   const form = new FormData();
   form.append("content", content ?? "");
   if (parentId) form.append("parentId", parentId);
+  if (quotedTweetId) form.append("quotedTweetId", quotedTweetId);
   for (const file of images ?? []) form.append("images", file);
 
   const res = await fetchWithAuth("/api/tweets", {
     method: "POST",
     headers: { Accept: "application/json" }, // no Content-Type: let the browser set the boundary
     body: form,
+  });
+  if (!res.ok) throw await toApiError(res);
+  return res.json();
+}
+
+/**
+ * PUT /api/tweets/{id} — auth; author-only, text-only edit within the edit window
+ * (Module 11A). Returns the updated tweet with `editedAtUtc` set. Throws ApiError:
+ * 400 (empty/too long), 403 (not the author), 404 (missing), 409 (window expired).
+ */
+export async function editTweet(id: string, content: string): Promise<Tweet> {
+  const res = await fetchWithAuth(`/api/tweets/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ content }),
   });
   if (!res.ok) throw await toApiError(res);
   return res.json();

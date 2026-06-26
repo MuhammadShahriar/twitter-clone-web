@@ -10,6 +10,7 @@ import {
   type TweetPage,
 } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
+import { useQuoteComposer } from "@/context/QuoteComposerContext";
 import { useSuggestions } from "@/lib/useSuggestions";
 import { Composer } from "@/components/Composer";
 import { SuggestionList } from "@/components/SuggestionList";
@@ -160,6 +161,12 @@ export function Feed() {
     // Prepend; mergeUnique keeps it from reappearing when its page loads.
     setTweets((prev) => mergeUnique([created], prev));
   }, []);
+
+  // Quote tweets are posted from a modal that can be opened anywhere (10B), so
+  // they arrive via the QuoteComposer context rather than the inline Composer.
+  // Prepend them the same way a normal new post lands at the top of the feed.
+  const { onTweetPosted } = useQuoteComposer();
+  useEffect(() => onTweetPosted(handlePosted), [onTweetPosted, handlePosted]);
 
   const handleDelete = useCallback(async (id: string) => {
     await deleteTweet(id);

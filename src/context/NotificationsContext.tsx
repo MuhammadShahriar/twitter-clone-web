@@ -47,6 +47,8 @@ function toastText(n: Notification): string {
       return `${who} liked your post`;
     case "Retweet":
       return `${who} reposted your post`;
+    case "Quote":
+      return `${who} quoted your post`;
     case "Reply":
       return `${who} replied to your post`;
     case "Follow":

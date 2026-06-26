@@ -36,6 +36,20 @@ export function relativeTime(iso: string): string {
   });
 }
 
+/**
+ * How long after posting a tweet stays editable (Module 11B) — 30 minutes, to
+ * match the backend's default edit window. Past this the API returns 409, so the
+ * UI hides the Edit action client-side rather than offer a doomed action.
+ */
+export const EDIT_WINDOW_MS = 30 * 60 * 1000;
+
+/** Whether a tweet is still within its edit window (drives the author's Edit option). */
+export function withinEditWindow(createdAtUtc: string): boolean {
+  const created = new Date(createdAtUtc).getTime();
+  if (Number.isNaN(created)) return false;
+  return Date.now() - created < EDIT_WINDOW_MS;
+}
+
 /** Absolute timestamp for the focused tweet, e.g. "2:14 PM · Jun 9, 2026". */
 export function absoluteTime(iso: string): string {
   const d = new Date(iso);

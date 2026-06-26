@@ -11,7 +11,14 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/context/NotificationsContext";
 import { Avatar } from "@/components/Avatar";
 import { relativeTime } from "@/lib/format";
-import { IconAt, IconLike, IconPersonPlus, IconReply, IconRetweet } from "@/components/icons";
+import {
+  IconAt,
+  IconLike,
+  IconPersonPlus,
+  IconQuote,
+  IconReply,
+  IconRetweet,
+} from "@/components/icons";
 
 const PAGE_SIZE = 20;
 
@@ -36,6 +43,12 @@ function TypeIcon({ type }: { type: Notification["type"] }) {
       return (
         <span style={{ color: "var(--retweet)" }}>
           <IconRetweet size={26} />
+        </span>
+      );
+    case "Quote":
+      return (
+        <span style={{ color: "var(--retweet)" }}>
+          <IconQuote size={24} />
         </span>
       );
     case "Reply":
@@ -68,6 +81,8 @@ function actionText(type: Notification["type"]): string {
       return "liked your post";
     case "Retweet":
       return "reposted your post";
+    case "Quote":
+      return "quoted your post";
     case "Reply":
       return "replied to your post";
     case "Follow":

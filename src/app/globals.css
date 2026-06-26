@@ -605,7 +605,8 @@ body {
   min-width: 0;
 }
 .t-dot,
-.t-time {
+.t-time,
+.t-edited {
   color: var(--text-secondary);
   white-space: nowrap;
   flex-shrink: 0;
@@ -764,6 +765,102 @@ a.tag:hover {
   100% {
     transform: scale(1);
   }
+}
+
+/* ===== Repost / Quote menu (Module 10B) ===== */
+/* The retweet button is now a menu trigger; the wrapper anchors the dropdown. */
+.repost-wrap {
+  position: relative;
+  display: inline-flex;
+}
+/* Open the repost menu rightward from the button (the delete menu stays right-0). */
+.repost-menu {
+  left: 0;
+  right: auto;
+}
+
+/* ===== Embedded quoted card (Module 10B) ===== */
+/* Compact, inset, non-interactive preview of a quoted tweet — rendered inside a
+   TweetCard / FocusedTweet, and read-only in the quote composer (.preview). */
+.quoted-card {
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.quoted-card:hover {
+  background: var(--row-hover);
+}
+/* In the composer the embed is purely a preview — no hover/click affordance. */
+.quoted-card.preview,
+.quoted-card.unavailable {
+  cursor: default;
+}
+.quoted-card.preview:hover,
+.quoted-card.unavailable:hover {
+  background: none;
+}
+.quoted-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  line-height: 1.2;
+}
+.quoted-card .avatar.quoted-avatar {
+  width: 20px;
+  height: 20px;
+  font-size: 10px;
+}
+.quoted-name {
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.quoted-handle {
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.quoted-dot,
+.quoted-time {
+  color: var(--text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.quoted-body {
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--text);
+  margin-top: 2px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+.quoted-body .tag {
+  color: var(--accent);
+}
+/* Tighter, slightly smaller media inside the embed. */
+.quoted-card .media-grid {
+  margin-top: 8px;
+  border-radius: 12px;
+}
+/* Deleted-target quote: muted placeholder. */
+.quoted-gone {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* Quote composer modal (10B): reuse the inline Composer without its own divider. */
+.quote-modal-body {
+  padding: 0;
+}
+.quote-modal-body .compose {
+  border-bottom: 0;
 }
 
 /* Toast — subtle transient feedback for engagement (Module 3C). */

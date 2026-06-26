@@ -73,6 +73,20 @@ export const IconShare = (p: IcoProps) => (
     <path d="M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7" />
   </Svg>
 );
+/** Pencil-over-line glyph for the "Edit" entry in the author's tweet menu (Module 11B). */
+export const IconEdit = (p: IcoProps) => (
+  <Svg {...p}>
+    <path d="M12 20h8" />
+    <path d="M15.5 4.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z" />
+  </Svg>
+);
+/** Pencil glyph for the "Quote" entry in the repost menu (Module 10B). */
+export const IconQuote = (p: IcoProps) => (
+  <Svg {...p}>
+    <path d="M4 20.5l1-4L16.5 5a2 2 0 0 1 3 3L8 19.5l-4 1z" />
+    <path d="m14 7 3 3" />
+  </Svg>
+);
 export const IconMore = (p: IcoProps) => (
   <Svg {...p}>
     <circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none" />

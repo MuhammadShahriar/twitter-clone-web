@@ -3,13 +3,18 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { Tweet } from "@/lib/api";
-import { absoluteTime, fmtCount } from "@/lib/format";
+import { absoluteTime, fmtCount, withinEditWindow } from "@/lib/format";
 import { useEngagement } from "@/lib/useEngagement";
+import { useQuoteComposer } from "@/context/QuoteComposerContext";
 import { Avatar } from "@/components/Avatar";
 import { RichText } from "@/components/RichText";
 import { MediaGrid } from "@/components/MediaGrid";
+import { QuoteEmbed, toQuotedPreview } from "@/components/QuotedTweetCard";
+import { RepostMenu } from "@/components/RepostMenu";
+import { EditTweetModal } from "@/components/EditTweetModal";
 import {
   IconBookmark,
+  IconEdit,
   IconLike,
   IconMore,
   IconReply,
@@ -67,12 +72,17 @@ export function FocusedTweet({
   onEngage?: (id: string, patch: Partial<Tweet>) => void;
 }) {
   const { toggleLike, toggleRetweet, toggleBookmark } = useEngagement(tweet, onEngage);
+  const { openQuote } = useQuoteComposer();
   // Profile URLs use the bare handle (no `@`); the DTO handle may carry one.
   const authorHref = `/${tweet.authorHandle.replace(/^@+/, "")}`;
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [editing, setEditing] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
+
+  // Author-only Edit, gated by the edit window (past it the API 409s). See TweetCard.
+  const canEdit = canDelete && withinEditWindow(tweet.createdAtUtc);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -90,6 +100,7 @@ export function FocusedTweet({
   const stats: Array<[number, string]> = [
     [replyCount, replyCount === 1 ? "Reply" : "Replies"],
     [tweet.retweetCount, "Reposts"],
+    [tweet.quoteCount ?? 0, "Quotes"],
     [tweet.likeCount, "Likes"],
   ];
   const shownStats = stats.filter(([n]) => n > 0);
@@ -105,6 +116,7 @@ export function FocusedTweet({
   }
 
   return (
+    <>
     <article
       className="focused"
       style={deleting ? { opacity: 0.5, pointerEvents: "none" } : undefined}
@@ -139,6 +151,19 @@ export function FocusedTweet({
             </button>
             {menuOpen && (
               <div className="tweet-menu" role="menu">
+                {canEdit && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setEditing(true);
+                    }}
+                  >
+                    <IconEdit size={18} />
+                    Edit
+                  </button>
+                )}
                 <button
                   type="button"
                   className="danger"
@@ -160,7 +185,12 @@ export function FocusedTweet({
 
       <MediaGrid media={tweet.media} />
 
-      <div className="focused-meta">{absoluteTime(tweet.createdAtUtc)}</div>
+      <QuoteEmbed tweet={tweet} />
+
+      <div className="focused-meta">
+        {absoluteTime(tweet.createdAtUtc)}
+        {tweet.editedAtUtc && <span title="Edited"> · Edited</span>}
+      </div>
 
       {shownStats.length > 0 && (
         <div className="stats-bar">
@@ -176,14 +206,26 @@ export function FocusedTweet({
         <BigAction type="reply" label="Reply" onClick={onReply}>
           <IconReply size={22} />
         </BigAction>
-        <BigAction
-          type="retweet"
-          label={tweet.retweetedByCurrentUser ? "Undo repost" : "Repost"}
-          active={tweet.retweetedByCurrentUser}
-          onClick={toggleRetweet}
+        <RepostMenu
+          reposted={tweet.retweetedByCurrentUser}
+          onRepost={toggleRetweet}
+          onQuote={() => openQuote(toQuotedPreview(tweet))}
         >
-          <IconRetweet size={22} />
-        </BigAction>
+          {({ toggle, open }) => (
+            <button
+              type="button"
+              className={`big-action retweet ${tweet.retweetedByCurrentUser ? "on" : ""}`}
+              aria-label={tweet.retweetedByCurrentUser ? "Undo repost" : "Repost"}
+              aria-haspopup="menu"
+              aria-expanded={open}
+              onClick={toggle}
+            >
+              <span className="ico">
+                <IconRetweet size={22} />
+              </span>
+            </button>
+          )}
+        </RepostMenu>
         <BigAction
           type="like"
           label={tweet.likedByCurrentUser ? "Unlike" : "Like"}
@@ -205,5 +247,19 @@ export function FocusedTweet({
         </BigAction>
       </div>
     </article>
+
+      {editing && (
+        <EditTweetModal
+          tweet={tweet}
+          onEdited={(updated) =>
+            onEngage?.(tweet.id, {
+              content: updated.content,
+              editedAtUtc: updated.editedAtUtc,
+            })
+          }
+          onClose={() => setEditing(false)}
+        />
+      )}
+    </>
   );
 }
