@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { IconMore, IconSearch } from "@/components/icons";
 import { WhoToFollow } from "@/components/WhoToFollow";
 
@@ -14,19 +15,67 @@ const TRENDS = [
   { meta: "Technology · Trending", topic: "EF Core", posts: "5,677 posts" },
 ];
 
+// Submit-on-enter → /search?q=… (Module 8B). Reads the live `q` so the box
+// stays in sync with the results page (and prefills when you land on /search).
+// useSearchParams means this must render inside a <Suspense> boundary.
 function SearchBar() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const currentQ = searchParams.get("q") ?? "";
+
+  const [value, setValue] = useState(currentQ);
   const [focus, setFocus] = useState(false);
+
+  // Keep the input mirroring the URL query when navigation changes it
+  // (e.g. landing on /search?q=… from elsewhere, or clearing the search).
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setValue(currentQ);
+  }, [currentQ]);
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    const q = value.trim();
+    if (!q) return; // ignore empty / whitespace-only submits
+    router.push(`/search?q=${encodeURIComponent(q)}`);
+  }
+
   return (
-    <div className={`search ${focus ? "focus" : ""}`}>
+    <form
+      className={`search ${focus ? "focus" : ""}`}
+      role="search"
+      onSubmit={submit}
+    >
       <span className="search-ico">
         <IconSearch size={19} />
       </span>
       <input
         className="search-input"
+        type="search"
         placeholder="Search"
         aria-label="Search"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
         onFocus={() => setFocus(true)}
         onBlur={() => setFocus(false)}
+      />
+    </form>
+  );
+}
+
+// Static shell shown while SearchBar's Suspense boundary resolves the URL query.
+function SearchBarFallback() {
+  return (
+    <div className="search">
+      <span className="search-ico">
+        <IconSearch size={19} />
+      </span>
+      <input
+        className="search-input"
+        type="search"
+        placeholder="Search"
+        aria-label="Search"
+        disabled
       />
     </div>
   );
@@ -35,7 +84,9 @@ function SearchBar() {
 export function RightSidebar() {
   return (
     <div className="side-inner">
-      <SearchBar />
+      <Suspense fallback={<SearchBarFallback />}>
+        <SearchBar />
+      </Suspense>
 
       <section className="side-card" aria-label="What's happening">
         <h2 className="side-title">What&apos;s happening</h2>

@@ -808,6 +808,49 @@ export async function getFollowingFeed(
   return res.json();
 }
 
+// ---- Search (Module 8: users + tweets) ----
+
+/**
+ * GET /api/search/users?q=&cursor=&limit= — public; users whose handle or
+ * display name match `q` (case-insensitive, `@`-tolerant), cursor-paginated.
+ * Authed when a token is present so each row's `isFollowedByCurrentUser` fills
+ * (see getTweets); still works anonymously. Empty/whitespace `q` → empty page.
+ */
+export async function searchUsers(
+  q: string,
+  opts: { cursor?: string | null; limit?: number } = {}
+): Promise<UserListPage> {
+  const params = new URLSearchParams({ q });
+  if (opts.limit != null) params.set("limit", String(opts.limit));
+  if (opts.cursor) params.set("cursor", opts.cursor);
+  const res = await fetchWithAuth(`/api/search/users?${params.toString()}`, {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) throw await toApiError(res);
+  return res.json();
+}
+
+/**
+ * GET /api/search/tweets?q=&cursor=&limit= — public; tweets whose content
+ * matches `q`, newest-first, cursor-paginated. Authed like searchUsers so the
+ * by-me engagement flags fill. Empty/whitespace `q` → empty page.
+ */
+export async function searchTweets(
+  q: string,
+  opts: { cursor?: string | null; limit?: number } = {}
+): Promise<TweetPage> {
+  const params = new URLSearchParams({ q });
+  if (opts.limit != null) params.set("limit", String(opts.limit));
+  if (opts.cursor) params.set("cursor", opts.cursor);
+  const res = await fetchWithAuth(`/api/search/tweets?${params.toString()}`, {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) throw await toApiError(res);
+  return res.json();
+}
+
 // ---- Notifications (Module 5: REST reads + mark-all-read) ----
 
 /**
