@@ -18,6 +18,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Avatar } from "@/components/Avatar";
 import { EditProfileModal } from "@/components/EditProfileModal";
 import { FollowButton } from "@/components/FollowButton";
+import { MessageButton } from "@/components/MessageButton";
 import { TweetCard } from "@/components/TweetCard";
 import { IconBack, IconCalendar, IconRetweet } from "@/components/icons";
 import { fmtCount, monthYear } from "@/lib/format";
@@ -288,24 +289,27 @@ export function Profile({ handle }: { handle: string }) {
                   Edit profile
                 </button>
               ) : (
-                <FollowButton
-                  handle={profile.handle}
-                  isFollowing={profile.isFollowedByCurrentUser}
-                  onChange={(following) =>
-                    setProfile((prev) =>
-                      prev
-                        ? {
-                            ...prev,
-                            isFollowedByCurrentUser: following,
-                            followerCount: Math.max(
-                              0,
-                              prev.followerCount + (following ? 1 : -1)
-                            ),
-                          }
-                        : prev
-                    )
-                  }
-                />
+                <>
+                  <MessageButton handle={profile.handle} />
+                  <FollowButton
+                    handle={profile.handle}
+                    isFollowing={profile.isFollowedByCurrentUser}
+                    onChange={(following) =>
+                      setProfile((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              isFollowedByCurrentUser: following,
+                              followerCount: Math.max(
+                                0,
+                                prev.followerCount + (following ? 1 : -1)
+                              ),
+                            }
+                          : prev
+                      )
+                    }
+                  />
+                </>
               )}
             </div>
           </div>

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/context/NotificationsContext";
+import { useConversations } from "@/context/ConversationsContext";
 import { Avatar } from "@/components/Avatar";
 import {
   IconBell,
@@ -38,7 +39,7 @@ const NAV: NavItem[] = [
   { id: "home", label: "Home", href: "/", icon: IconHome },
   { id: "explore", label: "Explore", href: "/", icon: IconExplore },
   { id: "notif", label: "Notifications", href: "/notifications", icon: IconBell, badge: true },
-  { id: "msg", label: "Messages", href: "/", icon: IconMail },
+  { id: "msg", label: "Messages", href: "/messages", icon: IconMail, badge: true },
   { id: "bookmarks", label: "Bookmarks", href: "/bookmarks", icon: IconBookmarkNav },
   { id: "profile", label: "Profile", href: "/", icon: IconUser },
   { id: "more", label: "More", href: "/", icon: IconMoreCircle },
@@ -49,6 +50,7 @@ export function LeftNav() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, logout } = useAuth();
   const { unreadCount } = useNotifications();
+  const { unreadCount: dmUnread } = useConversations();
   const [menuOpen, setMenuOpen] = useState(false);
   const chipRef = useRef<HTMLDivElement | null>(null);
 
@@ -88,11 +90,14 @@ export function LeftNav() {
           const isActive =
             (it.id === "home" && pathname === "/") ||
             (it.id === "notif" && pathname === "/notifications") ||
+            (it.id === "msg" && pathname.startsWith("/messages")) ||
             (it.id === "bookmarks" && pathname === "/bookmarks") ||
             (it.id === "profile" && href !== "/" && pathname === href);
-          // The notifications bell shows a live unread count; other "badge"
-          // items keep the plain dot placeholder.
-          const showCount = it.id === "notif" && unreadCount > 0;
+          // Notifications + Messages each show a live unread count; any other
+          // "badge" item keeps the plain dot placeholder.
+          const count =
+            it.id === "notif" ? unreadCount : it.id === "msg" ? dmUnread : 0;
+          const showCount = count > 0;
           return (
             <li key={it.id}>
               <Link
@@ -105,14 +110,12 @@ export function LeftNav() {
                   {showCount ? (
                     <span
                       className="nav-badge-count"
-                      aria-label={`${unreadCount} unread notifications`}
+                      aria-label={`${count} unread ${it.label}`}
                     >
-                      {unreadCount > 9 ? "9+" : unreadCount}
+                      {count > 9 ? "9+" : count}
                     </span>
                   ) : (
-                    it.badge && it.id !== "notif" && !isActive && (
-                      <span className="nav-badge" />
-                    )
+                    it.badge && !isActive && <span className="nav-badge" />
                   )}
                 </span>
                 <span className="nav-label">{it.label}</span>

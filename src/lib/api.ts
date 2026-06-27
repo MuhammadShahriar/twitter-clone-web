@@ -428,6 +428,14 @@ export function notificationsHubUrl(): string {
   return `${baseUrl}/hubs/notifications`;
 }
 
+/** Absolute URL of the chat SignalR hub ({API_ORIGIN}/hubs/chat) — Module 12B. */
+export function chatHubUrl(): string {
+  if (!baseUrl) {
+    throw new Error("NEXT_PUBLIC_API_URL is not set. Add it to .env.local.");
+  }
+  return `${baseUrl}/hubs/chat`;
+}
+
 /**
  * Like fetch, but attaches the bearer token and, on a 401, performs exactly one
  * silent refresh + retry. The retry calls authedFetch directly (not itself), so
@@ -952,6 +960,155 @@ export async function getUnreadCount(): Promise<{ unreadCount: number }> {
 export async function markNotificationsRead(): Promise<{ unreadCount: number }> {
   const res = await fetchWithAuth("/api/notifications/read", {
     method: "POST",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) throw await toApiError(res);
+  return res.json();
+}
+
+// ---- Direct messages / chat (Module 12: REST contract from 12A) ----
+//
+// Built to the documented 12A contract — the backend wasn't present locally to
+// verify exact field names, so a couple of shapes are assumed (flagged inline):
+//   • the list/messages endpoints return the same `{ items, nextCursor }` cursor
+//     page as every other paginated read in this client;
+//   • a MessageDto carries a nested `sender { handle, displayName, avatarUrl }`
+//     (the contract's primary shape); `senderId`/`isMine` are also tolerated.
+// If 12A differs, only the types + the `msgIsMine` helper need adjusting.
+
+/** A participant shown on a conversation row / message bubble. */
+export interface ChatParticipant {
+  handle: string;
+  displayName: string;
+  avatarUrl: string | null;
+}
+
+/** The last-message preview on a conversation row. */
+export interface ConversationLastMessage {
+  contentPreview: string;
+  createdAtUtc: string;
+  senderId: string;
+}
+
+/** One 1-on-1 conversation (GET /api/conversations item). */
+export interface Conversation {
+  id: string;
+  otherParticipant: ChatParticipant;
+  lastMessage: ConversationLastMessage | null;
+  unreadCount: number;
+  lastMessageAtUtc: string | null;
+}
+
+export interface ConversationPage {
+  items: Conversation[];
+  nextCursor: string | null;
+}
+
+/** One direct message (GET/POST messages). */
+export interface Message {
+  id: string;
+  conversationId: string;
+  /** Primary shape: nested sender. */
+  sender?: ChatParticipant;
+  /** Alternate shape some backends use instead of a nested sender. */
+  senderId?: string;
+  isMine?: boolean;
+  content: string;
+  createdAtUtc: string; // ISO 8601 UTC
+}
+
+export interface MessagePage {
+  items: Message[];
+  nextCursor: string | null;
+}
+
+/** Payload pushed over the chat hub's `ReceiveMessage` event (Module 12B). */
+export interface ChatMessagePush {
+  message: Message;
+  conversationId: string;
+  unreadCount: number;
+}
+
+/**
+ * GET /api/conversations?cursor=&limit= — auth; my conversations, most-recent
+ * activity first, cursor-paginated (same page shape as the feeds).
+ */
+export async function getConversations(
+  opts: { cursor?: string | null; limit?: number } = {}
+): Promise<ConversationPage> {
+  const params = new URLSearchParams();
+  if (opts.limit != null) params.set("limit", String(opts.limit));
+  if (opts.cursor) params.set("cursor", opts.cursor);
+  const query = params.toString();
+  const res = await fetchWithAuth(`/api/conversations${query ? `?${query}` : ""}`, {
+    cache: "no-store",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) throw await toApiError(res);
+  return res.json();
+}
+
+/**
+ * POST /api/conversations — auth; get-or-create the 1-on-1 conversation with
+ * `recipientHandle`, returns the ConversationDto. Self → 400, unknown → 404.
+ * The handle is sent `@`-prefixed to match how the API resolves users elsewhere
+ * (see `userHandleSegment`); flip to bare if 12A expects that.
+ */
+export async function getOrCreateConversation(recipientHandle: string): Promise<Conversation> {
+  const handle = `@${recipientHandle.replace(/^@+/, "")}`;
+  const res = await fetchWithAuth("/api/conversations", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ recipientHandle: handle }),
+  });
+  if (!res.ok) throw await toApiError(res);
+  return res.json();
+}
+
+/**
+ * GET /api/conversations/{id}/messages?cursor=&limit= — auth; participant-only
+ * (403 otherwise). Newest-first keyset (the UI reverses to render oldest→newest).
+ */
+export async function getMessages(
+  conversationId: string,
+  opts: { cursor?: string | null; limit?: number } = {}
+): Promise<MessagePage> {
+  const params = new URLSearchParams();
+  if (opts.limit != null) params.set("limit", String(opts.limit));
+  if (opts.cursor) params.set("cursor", opts.cursor);
+  const query = params.toString();
+  const res = await fetchWithAuth(
+    `/api/conversations/${conversationId}/messages${query ? `?${query}` : ""}`,
+    { cache: "no-store", headers: { Accept: "application/json" } }
+  );
+  if (!res.ok) throw await toApiError(res);
+  return res.json();
+}
+
+/** POST /api/conversations/{id}/messages — auth; send a message, returns the new MessageDto. */
+export async function sendMessage(conversationId: string, content: string): Promise<Message> {
+  const res = await fetchWithAuth(`/api/conversations/${conversationId}/messages`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ content }),
+  });
+  if (!res.ok) throw await toApiError(res);
+  return res.json();
+}
+
+/** POST /api/conversations/{id}/read — auth; zeroes my unread for this conversation. */
+export async function markConversationRead(conversationId: string): Promise<void> {
+  const res = await fetchWithAuth(`/api/conversations/${conversationId}/read`, {
+    method: "POST",
+    headers: { Accept: "application/json" },
+  });
+  if (!res.ok) throw await toApiError(res);
+}
+
+/** GET /api/conversations/unread-count — auth; total unread DMs for the nav badge. */
+export async function getDmUnreadCount(): Promise<{ unreadCount: number }> {
+  const res = await fetchWithAuth("/api/conversations/unread-count", {
+    cache: "no-store",
     headers: { Accept: "application/json" },
   });
   if (!res.ok) throw await toApiError(res);

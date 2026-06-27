@@ -2,6 +2,7 @@ import { LeftNav } from "@/components/LeftNav";
 import { RightSidebar } from "@/components/RightSidebar";
 import { ToastProvider } from "@/context/ToastContext";
 import { NotificationsProvider } from "@/context/NotificationsContext";
+import { ConversationsProvider } from "@/context/ConversationsContext";
 import { QuoteComposerProvider } from "@/context/QuoteComposerContext";
 
 // Shared 3-column app shell (Brief 2). Every feature page under (app) reuses
@@ -16,6 +17,7 @@ export default function AppLayout({
   return (
     <ToastProvider>
       <NotificationsProvider>
+        <ConversationsProvider>
         <QuoteComposerProvider>
           <div className="app">
             <header className="col-left">
@@ -27,6 +29,7 @@ export default function AppLayout({
             </aside>
           </div>
         </QuoteComposerProvider>
+        </ConversationsProvider>
       </NotificationsProvider>
     </ToastProvider>
   );

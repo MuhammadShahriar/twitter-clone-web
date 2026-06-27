@@ -73,6 +73,13 @@ export const IconShare = (p: IcoProps) => (
     <path d="M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7" />
   </Svg>
 );
+/** Paper-plane glyph for the chat composer's Send button (Module 12). */
+export const IconSend = (p: IcoProps) => (
+  <Svg {...p}>
+    <path d="M22 2 11 13" />
+    <path d="M22 2 15 22l-4-9-9-4z" />
+  </Svg>
+);
 /** Pencil-over-line glyph for the "Edit" entry in the author's tweet menu (Module 11B). */
 export const IconEdit = (p: IcoProps) => (
   <Svg {...p}>

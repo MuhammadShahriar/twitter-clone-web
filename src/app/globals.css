@@ -863,6 +863,262 @@ a.tag:hover {
   border-bottom: 0;
 }
 
+/* ===== Direct messages / chat (Module 12) ===== */
+
+/* Conversation list rows (/messages) — mirror the feed/notif row pattern. */
+.convo-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+.convo-row:hover {
+  background: #080808;
+}
+.convo-row.unread {
+  background: rgba(29, 155, 240, 0.06);
+}
+.convo-main {
+  flex: 1;
+  min-width: 0;
+}
+.convo-top {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 15px;
+  line-height: 1.2;
+}
+.convo-name {
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.convo-handle {
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.convo-time {
+  color: var(--text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.convo-preview {
+  margin-top: 2px;
+  color: var(--text-secondary);
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.convo-row.unread .convo-preview {
+  color: var(--text);
+  font-weight: 600;
+}
+.convo-unread {
+  flex: none;
+  align-self: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+}
+
+/* Thread: a viewport-height column — header / scrolling messages / pinned composer. */
+.chat-thread {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+.chat-head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 16px;
+  height: 53px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+.chat-head-peer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.chat-head-id {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.15;
+}
+.chat-head-name {
+  font-weight: 800;
+  font-size: 16px;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chat-head-handle {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.chat-head-fallback {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.chat-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.chat-empty {
+  margin: auto;
+  color: var(--text-secondary);
+  font-size: 15px;
+  text-align: center;
+  padding: 40px 0;
+}
+
+.msg-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  max-width: 85%;
+}
+.msg-row.theirs {
+  align-self: flex-start;
+}
+.msg-row.mine {
+  align-self: flex-end;
+}
+.msg-avatar {
+  width: 28px;
+  flex: none;
+}
+.msg-avatar .avatar {
+  width: 28px;
+  height: 28px;
+  font-size: 12px;
+}
+.msg-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.msg-row.mine .msg-col {
+  align-items: flex-end;
+}
+.bubble {
+  padding: 9px 14px;
+  border-radius: 18px;
+  font-size: 15px;
+  line-height: 1.35;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  max-width: 100%;
+}
+.bubble.theirs {
+  background: var(--surface-2);
+  color: var(--text);
+  border-bottom-left-radius: 4px;
+}
+.bubble.mine {
+  background: var(--accent);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.bubble.pending {
+  opacity: 0.6;
+}
+.msg-time {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin: 2px 6px 6px;
+}
+
+.chat-composer {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  background: var(--bg, #000);
+}
+.chat-input {
+  flex: 1;
+  resize: none;
+  border: 0;
+  outline: none;
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.4;
+  padding: 9px 14px;
+  border-radius: 18px;
+  max-height: 120px;
+  overflow-y: auto;
+}
+.chat-input::placeholder {
+  color: var(--text-secondary);
+}
+.chat-send {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.12s ease, opacity 0.12s ease;
+}
+.chat-send:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+.chat-send:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Profile "Message" button — outlined, matching "Edit profile". */
+.profile-btn.message {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid #536471;
+}
+.profile-btn.message:hover:not(:disabled) {
+  background: rgba(231, 233, 234, 0.1);
+}
+.profile-btn.message:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
 /* Toast — subtle transient feedback for engagement (Module 3C). */
 .toast {
   position: fixed;
