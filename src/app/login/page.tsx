@@ -76,12 +76,15 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      <Link
-        href="#"
-        className="mt-3.5 inline-block text-[14px] text-accent hover:underline"
+      {/* No password-reset flow exists yet, so this is deliberately NOT a link
+          (a dead href="#" is a worse a11y/UX lie). Shown as a muted, honest hint
+          with a tooltip rather than a control that goes nowhere. */}
+      <span
+        className="mt-3.5 inline-block cursor-default text-[14px] text-text-secondary"
+        title="Password reset isn't available yet."
       >
         Password ভুলে গেছো?
-      </Link>
+      </span>
 
       <p className="mt-[26px] text-[15px] text-text-secondary">
         Account নেই?{" "}

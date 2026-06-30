@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { avatarColor, initials } from "@/lib/format";
 
 /**
@@ -21,13 +24,23 @@ export function Avatar({
   /** Extra size modifier, e.g. "sm" / "lg". */
   className?: string;
 }) {
-  if (src) {
+  // Track a src that failed to load so a broken/expired URL falls back to the
+  // initials placeholder instead of a broken-image icon. Keyed by the URL value:
+  // when `src` changes to a fresh URL we retry it (new src !== erroredSrc).
+  const [erroredSrc, setErroredSrc] = useState<string | null>(null);
+
+  if (src && src !== erroredSrc) {
     return (
       <span className={`avatar ${className}`.trim()} aria-hidden>
         {/* Plain <img>: avatars are small, fixed-size, external (Cloudinary) URLs;
             next/image's optimizer/loader adds no benefit here. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="avatar-img" src={src} alt="" />
+        <img
+          className="avatar-img"
+          src={src}
+          alt=""
+          onError={() => setErroredSrc(src)}
+        />
       </span>
     );
   }

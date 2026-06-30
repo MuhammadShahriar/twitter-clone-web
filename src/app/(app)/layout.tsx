@@ -1,5 +1,6 @@
 import { LeftNav } from "@/components/LeftNav";
 import { RightSidebar } from "@/components/RightSidebar";
+import { MobileNav } from "@/components/MobileNav";
 import { ToastProvider } from "@/context/ToastContext";
 import { NotificationsProvider } from "@/context/NotificationsContext";
 import { ConversationsProvider } from "@/context/ConversationsContext";
@@ -28,6 +29,8 @@ export default function AppLayout({
               <RightSidebar />
             </aside>
           </div>
+          {/* Mobile-only bottom tab bar + compose FAB (responsive pass). */}
+          <MobileNav />
         </QuoteComposerProvider>
         </ConversationsProvider>
       </NotificationsProvider>

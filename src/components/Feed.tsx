@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   deleteTweet,
@@ -25,6 +25,29 @@ type Tab = "for-you" | "following";
 function mergeUnique(existing: Tweet[], incoming: Tweet[]): Tweet[] {
   const seen = new Set(existing.map((t) => t.id));
   return [...existing, ...incoming.filter((t) => !seen.has(t.id))];
+}
+
+/**
+ * Collapse the Following feed so a tweet reposted by several people you follow
+ * shows as ONE card, not one per reposter. Items are newest-first, so the first
+ * occurrence is the most recent surfacing — we keep it (and thus the most recent
+ * reposter), and if it happens to be the original post (no `retweetedBy`) while a
+ * later duplicate is a repost, we carry that repost attribution over so the card
+ * still reads as a repost. NOTE: a true "{name} and N others reposted" line needs
+ * a backend field (a reposter list or count) — `retweetedBy` is a single
+ * handle/displayName, so we can't show the count without it.
+ */
+function dedupeById(list: Tweet[]): Tweet[] {
+  const byId = new Map<string, Tweet>();
+  for (const t of list) {
+    const existing = byId.get(t.id);
+    if (!existing) {
+      byId.set(t.id, t);
+    } else if (!existing.retweetedBy && t.retweetedBy) {
+      byId.set(t.id, { ...existing, retweetedBy: t.retweetedBy });
+    }
+  }
+  return [...byId.values()];
 }
 
 function fetchPage(
@@ -180,6 +203,10 @@ export function Feed() {
     setTweets((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
   }, []);
 
+  // De-dupe by id at render: the same tweet can surface more than once in the
+  // Following feed (e.g. reposted by several people you follow) — show one card.
+  const visibleTweets = useMemo(() => dedupeById(tweets), [tweets]);
+
   return (
     <>
       <div className="feed-head">
@@ -255,7 +282,7 @@ export function Feed() {
 
             {!loading &&
               !error &&
-              tweets.map((t) => (
+              visibleTweets.map((t) => (
                 <div key={t.id}>
                   {t.retweetedBy && (
                     <div className="retweet-marker">

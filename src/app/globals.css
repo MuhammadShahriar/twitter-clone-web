@@ -238,6 +238,7 @@ body {
   min-width: 0;
 }
 .acct-name {
+  display: block;
   font-size: 15px;
   font-weight: 700;
   white-space: nowrap;
@@ -245,6 +246,7 @@ body {
   text-overflow: ellipsis;
 }
 .acct-handle {
+  display: block;
   font-size: 15px;
   color: var(--text-secondary);
   white-space: nowrap;
@@ -2149,4 +2151,148 @@ a.tag:hover {
   height: 9px;
   border-radius: 50%;
   background: var(--accent);
+}
+
+/* ===================================================================== */
+/* Mobile responsive pass                                                */
+/* Desktop-first layout above is untouched; everything below only takes  */
+/* effect at/below the phone breakpoint (688px = the 88px icon rail +    */
+/* 600px center, the narrowest the existing collapse supports). The      */
+/* fixed 600px .col-center was the source of the horizontal overflow     */
+/* that clipped the right edge of the feed/profile/chat on phones.       */
+/* ===================================================================== */
+
+/* Bottom tab bar + compose FAB are mobile-only chrome — hidden on desktop. */
+.bottom-nav,
+.fab {
+  display: none;
+}
+
+@media (max-width: 688px) {
+  /* --- Collapse the 3-column shell to a single full-width column --- */
+  .app {
+    max-width: 100%;
+  }
+  .col-left {
+    display: none; /* left nav replaced by the bottom tab bar on mobile */
+  }
+  .col-center {
+    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0; /* let the column actually shrink to the viewport */
+    border-left: 0;
+    border-right: 0;
+    /* clear the fixed bottom tab bar so the last feed item isn't hidden */
+    padding-bottom: 53px;
+  }
+  /* The DM thread is a 100vh column with its own pinned composer and the
+     bottom bar is hidden there — so it needs no bottom clearance. */
+  .col-center:has(.chat-thread) {
+    padding-bottom: 0;
+  }
+
+  /* --- Bottom tab bar --- */
+  .bottom-nav {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 50;
+    height: 53px;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border);
+  }
+
+  /* --- Compose floating action button --- */
+  .fab {
+    display: grid;
+    place-items: center;
+    position: fixed;
+    right: 18px;
+    bottom: 70px; /* sits above the 53px bar */
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    z-index: 49;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+    transition: background 0.15s ease;
+  }
+  .fab:hover {
+    background: var(--accent-hover);
+  }
+
+  /* --- Profile header fits the narrow viewport (avatar + buttons on one row) --- */
+  .banner {
+    height: 130px;
+  }
+  .profile-actions-row .avatar-link {
+    margin-top: -48px;
+  }
+  .avatar.profile-pic {
+    width: 88px;
+    height: 88px;
+    font-size: 34px;
+  }
+  .profile-action-btns {
+    padding-top: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  /* --- Chat bubbles get a touch more side margin on small screens --- */
+  .msg-row {
+    max-width: 80%;
+  }
+
+  /* --- Inner chrome for the bottom bar + FAB. Kept INSIDE the media query so
+     nothing mobile-only is defined at desktop scope (the parents are also
+     display:none on desktop, but this leaves zero desktop footprint). --- */
+  .bottom-nav-item {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color 0.12s ease;
+  }
+  .bottom-nav-item:hover,
+  .bottom-nav-item.active {
+    color: var(--text);
+  }
+  .bottom-nav-ico {
+    position: relative;
+    display: grid;
+    place-items: center;
+  }
+  .bottom-nav-item svg {
+    width: 26px;
+    height: 26px;
+  }
+  .bottom-nav-badge {
+    position: absolute;
+    top: -6px;
+    left: 12px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--accent);
+    border: 2px solid var(--bg);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .fab svg {
+    width: 26px;
+    height: 26px;
+  }
 }
